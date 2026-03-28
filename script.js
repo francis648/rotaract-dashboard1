@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       // Use environment variable if available, fallback to localhost
-      const API_URL = 
+      const API_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
       const response = await fetch(`${API_URL}/submit`, {
