@@ -5,8 +5,8 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 const { Parser } = require("json2csv");
 const ExcelJS = require("exceljs");
-const cors = require("cors"); // NEW
-require("dotenv").config(); // load environment variables
+const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 
@@ -29,7 +29,7 @@ app.use(session({
   cookie: { secure: false } // set true if using HTTPS
 }));
 
-// Database connection using environment variables
+// Database connection
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -37,7 +37,6 @@ const db = mysql.createConnection({
   database: process.env.DB_NAME || "rotaract_db"
 });
 
-// Ensure connection works
 db.connect(err => {
   if (err) {
     console.error("Database connection failed:", err.stack);
@@ -76,7 +75,7 @@ db.query(`
   )
 `);
 
-// Middleware to protect admin routes
+// Middleware
 function requireLogin(req, res, next) {
   if (!req.session.userId) {
     return res.status(401).json({ message: "Unauthorized. Please log in." });
@@ -84,7 +83,6 @@ function requireLogin(req, res, next) {
   next();
 }
 
-// Middleware to require superadmin role
 function requireSuperAdmin(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ message: "Unauthorized." });
   db.query("SELECT role FROM admins WHERE id = ?", [req.session.userId], (err, results) => {
@@ -94,7 +92,7 @@ function requireSuperAdmin(req, res, next) {
   });
 }
 
-// Register admin (superadmin only)
+// Register admin
 app.post("/register", requireSuperAdmin, async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -104,14 +102,14 @@ app.post("/register", requireSuperAdmin, async (req, res) => {
       [username, hashed],
       (err) => {
         if (err) {
-          console.error(err);
-          return res.status(500).json({ message: "Error registering admin." });
+          console.error("MySQL error registering admin:", err.sqlMessage);
+          return res.status(500).json({ message: "Error registering admin.", error: err.sqlMessage });
         }
         res.json({ message: "Admin registered successfully!" });
       }
     );
   } catch (error) {
-    console.error(error);
+    console.error("Server error:", error);
     res.status(500).json({ message: "Server error." });
   }
 });
@@ -150,14 +148,14 @@ app.post("/submit", (req, res) => {
 
   db.query(sql, values, (err) => {
     if (err) {
-      console.error(err);
-      return res.status(500).json({ message: "Error saving member." });
+      console.error("MySQL error saving member:", err.sqlMessage);
+      return res.status(500).json({ message: "Error saving member.", error: err.sqlMessage });
     }
     res.json({ message: "Member submitted successfully!" });
   });
 });
 
-// Get all members (protected)
+// Get all members
 app.get("/members", requireLogin, (req, res) => {
   db.query("SELECT * FROM charter_members", (err, results) => {
     if (err) return res.status(500).json({ message: "Error retrieving members." });
@@ -165,7 +163,7 @@ app.get("/members", requireLogin, (req, res) => {
   });
 });
 
-// Export as CSV (protected)
+// Export as CSV
 app.get("/export/csv", requireLogin, (req, res) => {
   db.query("SELECT * FROM charter_members", (err, results) => {
     if (err) return res.status(500).json({ message: "Error exporting CSV." });
@@ -179,7 +177,7 @@ app.get("/export/csv", requireLogin, (req, res) => {
   });
 });
 
-// Export as Excel (protected)
+// Export as Excel
 app.get("/export/excel", requireLogin, async (req, res) => {
   db.query("SELECT * FROM charter_members", async (err, results) => {
     if (err) return res.status(500).json({ message: "Error exporting Excel." });
@@ -195,13 +193,13 @@ app.get("/export/excel", requireLogin, async (req, res) => {
   });
 });
 
-// Delete a member submission (protected)
+// Delete member
 app.delete("/members/:id", requireLogin, (req, res) => {
   const memberId = req.params.id;
   db.query("DELETE FROM charter_members WHERE id = ?", [memberId], (err, result) => {
     if (err) {
-      console.error(err);
-      return res.status(500).json({ message: "Error deleting member." });
+      console.error("MySQL error deleting member:", err.sqlMessage);
+      return res.status(500).json({ message: "Error deleting member.", error: err.sqlMessage });
     }
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Member not found." });
@@ -210,6 +208,6 @@ app.delete("/members/:id", requireLogin, (req, res) => {
   });
 });
 
-// Flexible port for hosting
+// Flexible port
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
