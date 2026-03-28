@@ -11,15 +11,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = Object.fromEntries(formData.entries());
 
     try {
-      // Use relative path locally, full backend URL when deployed
-      const response = await fetch(
-        "https://your-backend.onrender.com/submit", // replace with your backend domain
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        }
-      );
+      // Use environment variable if available, fallback to localhost
+      const API_URL = 
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+      const response = await fetch(`${API_URL}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
       const result = await response.json();
 
