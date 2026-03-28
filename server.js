@@ -5,9 +5,18 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 const { Parser } = require("json2csv");
 const ExcelJS = require("exceljs");
+const cors = require("cors"); // NEW
 require("dotenv").config(); // load environment variables
 
 const app = express();
+
+// Enable CORS for your frontend domain
+app.use(cors({
+  origin: "https://rotaract-dashboard.vercel.app", // frontend domain
+  methods: ["GET", "POST", "DELETE"],
+  credentials: true
+}));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
