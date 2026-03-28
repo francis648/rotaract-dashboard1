@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const API_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
+      // Send form data to backend
       const response = await fetch(`${API_URL}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
